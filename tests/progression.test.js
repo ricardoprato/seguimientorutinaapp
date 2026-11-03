@@ -45,6 +45,24 @@ test('down never goes below zero', () => {
   assert.equal(suggest(ex, last).kg, 0);
 });
 
+test('assisted (negative kg) going up reduces assistance instead of clamping to zero', () => {
+  const pullup = { id: 'pu', type: 'reps', sets: 3, min: 6, max: 10, incKg: 2.5 };
+  const last = { sets: [done(-20, 10), done(-20, 10), done(-20, 10)], rir: 1 };
+  assert.deepEqual(suggest(pullup, last), { action: 'up', kg: -17.5 });
+});
+
+test('assisted (negative kg) going down adds assistance', () => {
+  const pullup = { id: 'pu', type: 'reps', sets: 3, min: 6, max: 10, incKg: 2.5 };
+  const last = { sets: [done(-20, 4), done(-20, 4), done(-20, 3)], rir: 0 };
+  assert.deepEqual(suggest(pullup, last), { action: 'down', kg: -22.5 });
+});
+
+test('weighted (positive kg) going up adds load as usual', () => {
+  const pullup = { id: 'pu', type: 'reps', sets: 3, min: 6, max: 10, incKg: 2.5 };
+  const last = { sets: [done(10, 10), done(10, 10), done(10, 10)], rir: 2 };
+  assert.deepEqual(suggest(pullup, last), { action: 'up', kg: 12.5 });
+});
+
 test('time exercise without weight -> up keeps kg null', () => {
   const plank = { id: 't', type: 'time', sets: 3, min: 30, max: 45, incKg: 0 };
   const last = { sets: [done(null, 45), done(null, 50), done(null, 45)], rir: null };

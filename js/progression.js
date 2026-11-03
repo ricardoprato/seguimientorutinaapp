@@ -7,7 +7,12 @@ export function suggest(exercise, lastEntry) {
   const sets = lastEntry.sets.filter((s) => s.done && s.reps != null);
   const weights = sets.map((s) => s.kg).filter((kg) => kg != null);
   const topKg = weights.length ? Math.max(...weights) : null;
-  const shift = (delta) => (topKg == null ? null : Math.max(0, round(topKg + delta)));
+  // Negative kg = machine assistance (net load). Only positive loads are floored at zero.
+  const shift = (delta) => {
+    if (topKg == null) return null;
+    const next = round(topKg + delta);
+    return topKg >= 0 ? Math.max(0, next) : next;
+  };
 
   const rirOk = lastEntry.rir == null || lastEntry.rir >= 1;
   const allAtTop = sets.length >= exercise.sets && sets.every((s) => s.reps >= exercise.max);

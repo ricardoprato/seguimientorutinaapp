@@ -71,7 +71,7 @@ export const PRESETS = [
       ] },
       { name: 'Torso B', weekday: 4, exercises: [
         ex('Press inclinado con mancuernas', 3, 8, 10, 120, 2),
-        ex('Dominadas', 3, 6, 10, 120, 2.5, { notes: 'Kg = lastre (negativo si es asistida).' }),
+        ex('Dominadas', 3, 6, 10, 120, 2.5, { notes: 'Con lastre: kg en positivo. Asistida (máquina o banda): kg de ayuda en negativo, ej. -20.' }),
         ex('Remo sentado en polea', 3, 10, 12, 90, 5),
         ex('Cruce de poleas', 3, 12, 15, 60, 2.5),
         ex('Face pull', 3, 15, 20, 60, 2.5),
@@ -101,7 +101,7 @@ export const PRESETS = [
       ] },
       { name: 'Tirón A', weekday: 2, exercises: [
         ex('Remo Pendlay', 3, 6, 8, 150, 5),
-        ex('Dominadas', 3, 6, 10, 120, 2.5, { notes: 'Kg = lastre (negativo si es asistida).' }),
+        ex('Dominadas', 3, 6, 10, 120, 2.5, { notes: 'Con lastre: kg en positivo. Asistida (máquina o banda): kg de ayuda en negativo, ej. -20.' }),
         ex('Remo con mancuerna', 3, 8, 10, 90, 2, { perSide: true }),
         ex('Face pull', 3, 15, 20, 60, 2.5, { notes: 'Carga liviana, codos altos.' }),
         ex('Curl inclinado con mancuernas', 3, 10, 12, 60, 1),

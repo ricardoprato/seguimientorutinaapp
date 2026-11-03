@@ -1,0 +1,8 @@
+# Personal data must never be committed
+*.json
+!manifest.webmanifest
+!package.json
+*.csv
+*.xlsx
+.playwright-mcp/
+node_modules/

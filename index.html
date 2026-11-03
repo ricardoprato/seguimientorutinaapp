@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="theme-color" content="#14161a">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Rutina</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <nav class="tabs" aria-label="Secciones">
+      <button class="tab" data-view="train">Entrenar</button>
+      <button class="tab" data-view="history">Historial</button>
+      <button class="tab" data-view="routine">Rutina</button>
+      <button class="tab" data-view="data">Datos</button>
+    </nav>
+  </header>
+  <main id="view"></main>
+  <div id="timer" class="timer" hidden>
+    <div class="timer-info">
+      <span class="timer-label" id="timer-label">Descanso</span>
+      <span class="timer-time" id="timer-time">0:00</span>
+    </div>
+    <button class="btn ghost" id="timer-add">+15 s</button>
+    <button class="btn" id="timer-skip">Listo</button>
+  </div>
+  <div id="toast" class="toast" role="status" hidden></div>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

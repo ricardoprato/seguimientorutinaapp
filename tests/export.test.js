@@ -54,3 +54,10 @@ test('claude markdown includes user context only when configured', () => {
   const md = toClaudeMarkdown({ ...routine, context: 'Contexto de prueba' }, logs, { today: '2026-11-03' });
   assert.match(md, /Contexto: Contexto de prueba/);
 });
+
+test('claude markdown includes the session note when present', () => {
+  const withNote = [{ ...logs[0], note: 'Hombro izquierdo hizo click en press' }];
+  const md = toClaudeMarkdown(routine, withNote, { today: '2026-11-03' });
+  assert.match(md, /### 2026-11-02 · Empuje A\nNota: Hombro izquierdo hizo click en press\n/);
+  assert.doesNotMatch(toClaudeMarkdown(routine, logs, { today: '2026-11-03' }), /Nota:/);
+});

@@ -3,6 +3,7 @@ import { suggest, findLastEntry } from './progression.js';
 import { toCsv, toClaudeMarkdown, ACTION_LABEL, formatSet, formatTarget } from './export.js';
 import { PRESETS, buildRoutine } from './presets.js';
 import * as fileSync from './file-sync.js';
+import { exerciseSeries, streaks, heatmapWeeks } from './stats.js';
 
 const WEEKDAYS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 const VIEWS = ['train', 'history', 'routine', 'data'];
@@ -13,6 +14,8 @@ let logs = store.getLogs();
 let draft = null;
 let editDayId = null;
 let claudeWeeks = 8;
+let chartExId = null;
+const HEAT_WEEKS = 26;
 const openEx = new Set();
 
 // ---------- helpers ----------
@@ -136,6 +139,7 @@ function renderTrain() {
     <div class="row spread"><h2>${esc(day.name)}</h2>
       <input type="date" class="inline auto-w" id="draft-date" value="${d.date}" aria-label="Fecha de la sesión"></div>
     ${day.exercises.map(exerciseCard).join('') || empty('Este día no tiene ejercicios. Agregalos en la pestaña Rutina.')}
+    <label class="lbl">Notas de la sesión (sueño, energía, molestias)<textarea rows="2" id="draft-note" maxlength="500">${esc(d.note ?? '')}</textarea></label>
     <button class="btn block" data-action="finish" ${doneCount ? '' : 'disabled'}>Guardar sesión (${doneCount} series)</button>
     <button class="btn danger block" data-action="discard" data-confirm="Tocá de nuevo para descartar">Descartar sesión</button>`;
 }
@@ -183,10 +187,82 @@ function renderHistory() {
   const items = [...logs].reverse().map((l) => `
     <details class="card log-item">
       <summary><span><strong>${fmtDate(l.date)}</strong> · ${esc(l.dayName)}</span><span class="muted small">${l.exercises.length} ejercicios</span></summary>
+      ${l.note ? `<p class="small notes">${esc(l.note)}</p>` : ''}
       <ul>${l.exercises.map((e) => `<li>${esc(e.name)}: ${e.sets.map((s) => formatSet(s, e.type)).join(', ')}${e.rir != null ? ` (RIR ${e.rir})` : ''}</li>`).join('')}</ul>
       <button class="btn danger" data-action="delete-log" data-id="${l.id}" data-confirm="Tocá de nuevo para borrar">Borrar sesión</button>
     </details>`).join('');
-  $view.innerHTML = `<h2>Historial</h2>${items}`;
+  $view.innerHTML = `<h2>Historial</h2>${streakCard()}${progressCard()}<h3>Sesiones</h3>${items}`;
+}
+
+function streakCard() {
+  const today = todayIso();
+  const counts = logs.reduce((m, l) => m.set(l.date, (m.get(l.date) ?? 0) + 1), new Map());
+  const { current, longest } = streaks([...counts.keys()], today);
+  const weeks = heatmapWeeks(today, HEAT_WEEKS);
+  const total = weeks.flat().filter((d) => counts.has(d)).length;
+  const cell = 10; const gap = 2; const step = cell + gap;
+  const rects = weeks.flatMap((week, w) => week.map((date, d) => {
+    if (!date) return '';
+    const n = counts.get(date) ?? 0;
+    return `<rect x="${w * step}" y="${d * step}" width="${cell}" height="${cell}" rx="2" class="l${Math.min(n, 2)}${date === today ? ' today' : ''}" data-action="chart-tip" data-tip="${fmtDate(date)}: ${n ? `${n} ${n === 1 ? 'sesión' : 'sesiones'}` : 'descanso'}"><title>${fmtDate(date)}</title></rect>`;
+  })).join('');
+  return `<section class="card">
+    <div class="stats">
+      <div><span class="stat-num">${current}</span><span class="muted small">${current === 1 ? 'día' : 'días'} de racha</span></div>
+      <div><span class="stat-num">${longest}</span><span class="muted small">mejor racha</span></div>
+      <div><span class="stat-num">${total}</span><span class="muted small">días en ${HEAT_WEEKS} semanas</span></div>
+    </div>
+    <svg class="heat" viewBox="0 0 ${HEAT_WEEKS * step - gap} ${7 * step - gap}" role="img" aria-label="Días entrenados en las últimas ${HEAT_WEEKS} semanas">${rects}</svg>
+    <p class="muted small">Cada cuadrado es un día, de lunes (arriba) a domingo. Tocalo para ver la fecha.</p>
+  </section>`;
+}
+
+function progressCard() {
+  const names = new Map();
+  for (const l of logs) for (const e of l.exercises) names.set(e.exId, findEx(e.exId)?.name ?? e.name);
+  if (!names.has(chartExId)) chartExId = [...names.keys()].find((id) => findEx(id)) ?? [...names.keys()][0];
+  const opts = [...names].sort((a, b) => a[1].localeCompare(b[1]))
+    .map(([id, name]) => `<option value="${id}" ${id === chartExId ? 'selected' : ''}>${esc(name)}</option>`).join('');
+  const isTime = logs.flatMap((l) => l.exercises).find((e) => e.exId === chartExId)?.type === 'time';
+  return `<section class="card">
+    <h3>Progreso</h3>
+    <select id="chart-ex" aria-label="Ejercicio">${opts}</select>
+    ${progressChart(exerciseSeries(logs, chartExId), isTime)}
+  </section>`;
+}
+
+function progressChart(points, isTime) {
+  if (!points.length) return empty('Sin series registradas para este ejercicio.');
+  const byKg = points.some((p) => p.kg != null);
+  const unit = byKg ? 'kg' : isTime ? 's' : 'reps';
+  const data = points.filter((p) => (byKg ? p.kg != null : true)).map((p) => ({ ...p, v: byKg ? p.kg : p.reps }));
+  const W = 320; const H = 170; const L = 36; const R = 14; const T = 18; const B = 24;
+  const xs = data.map((p) => new Date(`${p.date}T00:00:00`).getTime());
+  const [x0, x1] = [Math.min(...xs), Math.max(...xs)];
+  let [y0, y1] = [Math.min(...data.map((p) => p.v)), Math.max(...data.map((p) => p.v))];
+  if (y0 === y1) { y0 -= 1; y1 += 1; }
+  const px = (x) => (x1 === x0 ? (L + W - R) / 2 : L + ((x - x0) / (x1 - x0)) * (W - L - R));
+  const py = (v) => T + (1 - (v - y0) / (y1 - y0)) * (H - T - B);
+  const fmtV = (v) => `${Math.round(v * 100) / 100}`;
+  const tip = (p) => `${fmtDate(p.date)}: ${byKg ? `${p.kg} kg × ${p.reps} ${isTime ? 's' : 'reps'}` : `${p.reps} ${unit}`}`;
+  const coords = data.map((p, i) => [px(xs[i]), py(p.v)]);
+  const dots = data.map((p, i) => `<g data-action="chart-tip" data-tip="${esc(tip(p))}"><title>${esc(tip(p))}</title>
+    <circle class="hit" cx="${coords[i][0]}" cy="${coords[i][1]}" r="12"/><circle class="dot" cx="${coords[i][0]}" cy="${coords[i][1]}" r="4"/></g>`).join('');
+  const last = data.at(-1); const [lx, ly] = coords.at(-1);
+  const short = (iso) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
+  const diff = last.v - data[0].v;
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Evolución en ${unit}">
+      <line class="grid" x1="${L}" x2="${W - R}" y1="${py(y1)}" y2="${py(y1)}"/>
+      <line class="grid" x1="${L}" x2="${W - R}" y1="${py(y0)}" y2="${py(y0)}"/>
+      <text x="${L - 6}" y="${py(y1) + 4}" text-anchor="end">${fmtV(y1)}</text>
+      <text x="${L - 6}" y="${py(y0) + 4}" text-anchor="end">${fmtV(y0)}</text>
+      <text x="${px(x0)}" y="${H - 6}" text-anchor="${data.length > 1 ? 'start' : 'middle'}">${short(data[0].date)}</text>
+      ${data.length > 1 ? `<text x="${px(x1)}" y="${H - 6}" text-anchor="end">${short(last.date)}</text>` : ''}
+      ${data.length > 1 ? `<polyline class="line" points="${coords.map((c) => c.join(',')).join(' ')}"/>` : ''}
+      ${dots}
+      <text class="value" x="${lx}" y="${ly - 9}" text-anchor="${data.length > 1 ? 'end' : 'middle'}">${fmtV(last.v)} ${unit}</text>
+    </svg>
+    <p class="muted small">${data.length} ${data.length === 1 ? 'sesión' : 'sesiones'} · ${byKg ? 'carga más pesada de cada sesión' : `mejor serie en ${unit}`}${data.length > 1 ? ` · ${diff >= 0 ? '+' : ''}${fmtV(diff)} ${unit} desde el inicio` : ''}. Tocá un punto para ver el detalle.</p>`;
 }
 
 function presetList(replacing) {
@@ -380,13 +456,15 @@ const actions = {
       if (!e?.sets.some((s) => s.done)) return null;
       return { exId: ex.id, name: ex.name, type: ex.type, rir: e.rir, sets: e.sets.filter((s) => s.done).map(({ kg, reps }) => ({ kg, reps, done: true })) };
     }).filter(Boolean);
-    logs.push({ id: newId('l'), date: d.date, dayId: day.id, dayName: day.name, exercises });
+    const note = d.note?.trim().slice(0, 500);
+    logs.push({ id: newId('l'), date: d.date, dayId: day.id, dayName: day.name, ...(note && { note }), exercises });
     store.saveLogs(logs); logs = store.getLogs();
     draft = null; store.saveDraft(null); stopTimer(); wakeLock?.release();
     toast('Sesión guardada'); window.scrollTo(0, 0); render();
   },
   discard: () => { draft = null; store.saveDraft(null); stopTimer(); toast('Sesión descartada'); render(); },
   'delete-log': (b) => { logs = logs.filter((l) => l.id !== b.dataset.id); store.saveLogs(logs); toast('Sesión borrada'); render(); },
+  'chart-tip': (b) => toast(b.dataset.tip),
   'edit-day': (b) => { editDayId = b.dataset.id; render(); },
   'add-day': () => {
     const day = { id: newId('d'), name: `Día ${routine.days.length + 1}`, weekday: null, exercises: [] };
@@ -441,6 +519,8 @@ $view.addEventListener('input', (ev) => {
     persistDraft();
   } else if (t.id === 'routine-context') {
     routine.context = t.value; saveRoutine();
+  } else if (t.id === 'draft-note') {
+    currentDraft().note = t.value; persistDraft();
   } else if (t.id === 'draft-date' && t.value) {
     currentDraft().date = t.value; persistDraft();
   } else if (t.dataset.r) {
@@ -458,6 +538,7 @@ $view.addEventListener('input', (ev) => {
 
 $view.addEventListener('change', async (ev) => {
   const t = ev.target;
+  if (t.id === 'chart-ex') { chartExId = t.value; render(); }
   if (t.id === 'claude-weeks') { claudeWeeks = Number(t.value); document.getElementById('claude-out').value = claudeText(); }
   if (t.dataset.r === 'ex' && ['type', 'sets', 'min', 'max'].includes(t.dataset.key)) render();
   if (t.id === 'import-file' && t.files[0]) {

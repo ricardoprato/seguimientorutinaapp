@@ -63,3 +63,15 @@ test('text fields are kept as plain strings (escaped later at render)', () => {
   const d = valid(); d.routine.days[0].name = '<b>Pecho</b>';
   assert.equal(parseBackup(d).routine.days[0].name, '<b>Pecho</b>');
 });
+
+test('session note survives import and stays absent when missing', () => {
+  const data = { app: 'rutina', routine: { days: [] }, logs: [
+    { id: 'l1', date: '2026-11-02', dayId: 'd1', dayName: 'A', note: 'Dormí mal', exercises: [] },
+    { id: 'l2', date: '2026-11-03', dayId: 'd1', dayName: 'A', exercises: [] },
+  ] };
+  const { logs } = parseBackup(data);
+  assert.equal(logs[0].note, 'Dormí mal');
+  assert.equal('note' in logs[1], false);
+  const long = parseBackup({ ...data, logs: [{ ...data.logs[0], note: 'x'.repeat(900) }] });
+  assert.equal(long.logs[0].note.length, 500);
+});

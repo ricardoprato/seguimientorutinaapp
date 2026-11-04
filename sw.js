@@ -1,8 +1,8 @@
 // Bump VERSION on every deploy so phones pick up the new files.
-const VERSION = 'rutina-v4';
+const VERSION = 'rutina-v5';
 const FILES = [
   './', 'index.html', 'styles.css', 'manifest.webmanifest', 'icon.svg',
-  'js/app.js', 'js/store.js', 'js/progression.js', 'js/export.js', 'js/presets.js', 'js/ids.js', 'js/file-sync.js', 'js/schema.js',
+  'js/app.js', 'js/store.js', 'js/progression.js', 'js/export.js', 'js/presets.js', 'js/ids.js', 'js/file-sync.js', 'js/schema.js', 'js/stats.js',
 ];
 
 self.addEventListener('install', (e) => {

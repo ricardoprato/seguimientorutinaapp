@@ -26,6 +26,7 @@
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html, body { margin: 0; }
 body {
   background: var(--bg); color: var(--fg); font: 15px/1.4 var(--font);
@@ -152,3 +153,20 @@ textarea.out { width: 100%; min-height: 160px; background: var(--surface-2); bor
   .check, .chip { transition: background-color 0.15s, border-color 0.15s; }
 }
 details.card > summary { cursor: pointer; }
+
+/* History: streak heatmap and progress chart (inline SVG, colors from tokens). */
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; }
+.stats > div { display: grid; }
+.stat-num { font-size: 1.6rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.heat, .chart { width: 100%; height: auto; display: block; }
+.heat rect { cursor: pointer; }
+.heat .l0 { fill: var(--surface-2); }
+.heat .l1 { fill: color-mix(in srgb, var(--accent) 60%, var(--surface-2)); }
+.heat .l2 { fill: var(--accent); }
+.heat .today { stroke: var(--fg); stroke-width: 1; }
+.chart .grid { stroke: var(--line); stroke-width: 1; }
+.chart .line { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.chart .dot { fill: var(--accent); stroke: var(--surface); stroke-width: 2; }
+.chart .hit { fill: transparent; cursor: pointer; }
+.chart text { fill: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.chart .value { fill: var(--fg); font-weight: 700; }

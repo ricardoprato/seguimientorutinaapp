@@ -42,6 +42,7 @@ const logExercise = (e) => ({
 
 const log = (l) => ({
   id: id(l.id), date: date(l.date), dayId: id(l.dayId), dayName: text(l.dayName),
+  ...(l.note != null && { note: text(l.note) }),
   exercises: list(l.exercises, 'ejercicios').map(logExercise),
 });
 

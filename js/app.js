@@ -140,7 +140,7 @@ function renderTrain() {
       <input type="date" class="inline auto-w" id="draft-date" value="${d.date}" aria-label="Fecha de la sesión"></div>
     ${day.exercises.map(exerciseCard).join('') || empty('Este día no tiene ejercicios. Agregalos en la pestaña Rutina.')}
     <label class="lbl">Notas de la sesión (sueño, energía, molestias)<textarea rows="2" id="draft-note" maxlength="500">${esc(d.note ?? '')}</textarea></label>
-    <button class="btn block" data-action="finish" ${doneCount ? '' : 'disabled'}>Guardar sesión (${doneCount} series)</button>
+    <button class="btn block" data-action="finish" ${doneCount ? '' : 'disabled'}>Guardar sesión (${doneCount} ${doneCount === 1 ? 'serie' : 'series'})</button>
     <button class="btn danger block" data-action="discard" data-confirm="Tocá de nuevo para descartar">Descartar sesión</button>`;
 }
 
@@ -186,7 +186,7 @@ function renderHistory() {
   if (!logs.length) { $view.innerHTML = `<h2>Historial</h2>${empty('Todavía no guardaste sesiones. Cuando termines una, tocá "Guardar sesión".')}`; return; }
   const items = [...logs].reverse().map((l) => `
     <details class="card log-item">
-      <summary><span><strong>${fmtDate(l.date)}</strong> · ${esc(l.dayName)}</span><span class="muted small">${l.exercises.length} ejercicios</span></summary>
+      <summary><span><strong>${fmtDate(l.date)}</strong> · ${esc(l.dayName)}</span><span class="muted small">${l.exercises.length} ${l.exercises.length === 1 ? 'ejercicio' : 'ejercicios'}</span></summary>
       ${l.note ? `<p class="small notes">${esc(l.note)}</p>` : ''}
       <ul>${l.exercises.map((e) => `<li>${esc(e.name)}: ${e.sets.map((s) => formatSet(s, e.type)).join(', ')}${e.rir != null ? ` (RIR ${e.rir})` : ''}</li>`).join('')}</ul>
       <button class="btn danger" data-action="delete-log" data-id="${l.id}" data-confirm="Tocá de nuevo para borrar">Borrar sesión</button>
@@ -210,7 +210,7 @@ function streakCard() {
     <div class="stats">
       <div><span class="stat-num">${current}</span><span class="muted small">${current === 1 ? 'día' : 'días'} de racha</span></div>
       <div><span class="stat-num">${longest}</span><span class="muted small">mejor racha</span></div>
-      <div><span class="stat-num">${total}</span><span class="muted small">días en ${HEAT_WEEKS} semanas</span></div>
+      <div><span class="stat-num">${total}</span><span class="muted small">días en ${HEAT_WEEKS} sem.</span></div>
     </div>
     <svg class="heat" viewBox="0 0 ${HEAT_WEEKS * step - gap} ${7 * step - gap}" role="img" aria-label="Días entrenados en las últimas ${HEAT_WEEKS} semanas">${rects}</svg>
     <p class="muted small">Cada cuadrado es un día, de lunes (arriba) a domingo. Tocalo para ver la fecha.</p>
@@ -226,7 +226,7 @@ function progressCard() {
   const isTime = logs.flatMap((l) => l.exercises).find((e) => e.exId === chartExId)?.type === 'time';
   return `<section class="card">
     <h3>Progreso</h3>
-    <select id="chart-ex" aria-label="Ejercicio">${opts}</select>
+    <select class="inline" id="chart-ex" aria-label="Ejercicio">${opts}</select>
     ${progressChart(exerciseSeries(logs, chartExId), isTime)}
   </section>`;
 }
@@ -291,7 +291,7 @@ function renderRoutine() {
     ${day ? `<section class="card">
       <div class="grid2">
         <label class="lbl">Nombre del día<input data-r="day" data-key="name" value="${esc(day.name)}"></label>
-        <label class="lbl">Se abre automáticamente el<select data-r="day" data-key="weekday">${wdOpts}</select></label>
+        <label class="lbl">Se abre el<select data-r="day" data-key="weekday">${wdOpts}</select></label>
       </div>
       ${exList || empty('Sin ejercicios todavía.')}
       <button class="btn ghost block" data-action="add-ex">+ Agregar ejercicio</button>

@@ -48,7 +48,7 @@ export function toClaudeMarkdown(routine, logs, { today, weeks = 8 }) {
   if (!recent.length) out.push('Sin sesiones en el período.', '');
   for (const log of recent) {
     out.push(`### ${log.date} · ${log.dayName}`);
-    if (log.note?.trim()) out.push(`Nota: ${log.note.trim()}`);
+    if (log.note?.trim()) out.push(`Nota: ${log.note.trim().replace(/\s+/g, ' ')}`);
     for (const e of log.exercises) {
       const sets = e.sets.filter((s) => s.done).map((s) => formatSet(s, e.type)).join(', ');
       out.push(`- ${e.name}: ${sets}${e.rir != null ? ` (RIR ${e.rir})` : ''}`);

@@ -61,3 +61,8 @@ test('claude markdown includes the session note when present', () => {
   assert.match(md, /### 2026-11-02 · Empuje A\nNota: Hombro izquierdo hizo click en press\n/);
   assert.doesNotMatch(toClaudeMarkdown(routine, logs, { today: '2026-11-03' }), /Nota:/);
 });
+
+test('multi-line session note stays on one markdown line', () => {
+  const md = toClaudeMarkdown(routine, [{ ...logs[0], note: 'Dormí mal\n### falso título\n- item' }], { today: '2026-11-03' });
+  assert.match(md, /\nNota: Dormí mal ### falso título - item\n/);
+});

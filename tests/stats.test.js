@@ -45,3 +45,7 @@ test('heatmapWeeks builds Monday-first weeks ending on the week of today, future
   assert.deepEqual(weeks[0], ['2026-10-26', '2026-10-27', '2026-10-28', '2026-10-29', '2026-10-30', '2026-10-31', '2026-11-01']);
   assert.deepEqual(weeks[1], ['2026-11-02', '2026-11-03', '2026-11-04', null, null, null, null]);
 });
+
+test('streaks ignores sessions dated after today', () => {
+  assert.deepEqual(streaks(['2026-11-02', '2026-11-03', '2026-11-10'], '2026-11-03'), { current: 2, longest: 2 });
+});

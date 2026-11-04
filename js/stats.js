@@ -22,7 +22,7 @@ export function exerciseSeries(logs, exId) {
 
 // Consecutive training days. The current streak stays alive until a full day is missed.
 export function streaks(dates, today) {
-  const days = [...new Set(dates)].map(toMs).sort((a, b) => a - b);
+  const days = [...new Set(dates)].filter((d) => d <= today).map(toMs).sort((a, b) => a - b);
   let longest = 0;
   let run = 0;
   days.forEach((d, i) => {
